@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
-    <canvas id="application"></canvas>
+    <canvas id="application" tabindex="0"></canvas>
 
     <div id="vignette"></div>
 
@@ -58,7 +58,7 @@
           <button type="button" id="btn-shop">Scout Pass</button>
           <button type="button" id="btn-settings">Settings</button>
         </nav>
-        <p class="hint">Click the canvas, then Q / E hooks · Shift gas · LMB slash nape</p>
+        <p class="hint">WASD to run (camera-relative). Hold Q / E to hook, Shift to gas, LMB to slash.</p>
       </div>
       <aside class="intel">
         <h2>Regiment board</h2>
@@ -87,7 +87,12 @@
       <div class="hud-center">
         <div id="wave-val" class="wave">WAVE 1</div>
         <div id="banner" class="banner"></div>
-        <div id="crosshair" class="crosshair"></div>
+        <div id="lock-hint" class="lock-hint"></div>
+        <div class="aim">
+          <span id="hook-l" class="hook-pip">Q</span>
+          <div id="crosshair" class="crosshair"></div>
+          <span id="hook-r" class="hook-pip">E</span>
+        </div>
       </div>
       <div class="hud-right">
         <div class="stat"><span>Kills</span><b id="kill-val">0</b></div>

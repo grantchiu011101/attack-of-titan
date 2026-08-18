@@ -24,7 +24,14 @@ export function paintHud(match: Match, flags: RemoteFlags): void {
   if (feed) feed.innerHTML = match.feed().map((l) => `<li>${escapeHtml(l)}</li>`).join('');
 
   const cross = document.getElementById('crosshair');
-  if (cross) cross.classList.toggle('nape', match.player.napeHintActive());
+  if (cross) {
+    cross.classList.toggle('nape', match.player.napeHintActive());
+    cross.classList.toggle('miss', match.player.missFlash > 0);
+  }
+  setPip('hook-l', match.player.leftHooked, match.player.hookReadyL, match.player.missFlash > 0 && !match.player.leftHooked);
+  setPip('hook-r', match.player.rightHooked, match.player.hookReadyR, match.player.missFlash > 0 && !match.player.rightHooked);
+  const hint = document.getElementById('lock-hint');
+  if (hint) hint.textContent = match.player.lockHint;
   const hud = document.getElementById('hud');
   if (hud) hud.dataset.variant = flags.hudVariant;
 }
@@ -54,6 +61,14 @@ export function paintProfile(profile: ScoutProfile | null): void {
 function setBar(id: string, t: number): void {
   const el = document.getElementById(id);
   if (el) el.style.width = `${Math.max(0, Math.min(1, t)) * 100}%`;
+}
+
+function setPip(id: string, locked: boolean, ready: boolean, miss: boolean): void {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('locked', locked);
+  el.classList.toggle('ready', ready && !locked);
+  el.classList.toggle('miss', miss && !locked && !ready);
 }
 
 function setText(id: string, v: string): void {

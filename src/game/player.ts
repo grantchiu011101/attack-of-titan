@@ -4,7 +4,7 @@ import type { PlayerStats } from '../types';
 import { audio } from './audio';
 import type { Input } from './input';
 import { mats, primitive } from './materials';
-import { clamp, lookYawPitch, raycastHookables } from './math';
+import { clamp, findHookTarget, lookYawPitch } from './math';
 import { SPAWN, WORLD_RADIUS, type World } from './world';
 
 interface Hook {
@@ -14,15 +14,15 @@ interface Hook {
 }
 
 const GRAVITY = -28;
-const HOOK_RANGE = 92;
+const HOOK_RANGE = 260;
 const MIN_ROPE = 3.5;
 const GAS_ACCEL = 48;
 const REEL_SPEED = 22;
 const MAX_SPEED = 52;
-const RUN_SPEED = 7.2;
+const RUN_SPEED = 12;
+const AIR_CONTROL = 26;
 const JUMP_SPEED = 8.5;
 const AIR_DRAG = 0.55;
-const GROUND_DRAG = 8;
 
 export class Player {
   entity: pc.Entity;
@@ -36,6 +36,10 @@ export class Player {
 
   private left: Hook = { active: false, point: new pc.Vec3(), length: 20 };
   private right: Hook = { active: false, point: new pc.Vec3(), length: 20 };
+  hookReadyL = false;
+  hookReadyR = false;
+  missFlash = 0;
+  lockHint = '';
   private cableL: pc.Entity;
   private cableR: pc.Entity;
   private gasJet: pc.Entity;
@@ -47,6 +51,9 @@ export class Player {
   private fwd = new pc.Vec3();
   private rightV = new pc.Vec3();
   private origin = new pc.Vec3();
+  private pos = new pc.Vec3();
+  private aimDir = new pc.Vec3();
+  private marker: pc.Entity;
 
   constructor(
     private app: pc.Application,
@@ -72,6 +79,8 @@ export class Player {
     this.cableR = this.makeCable();
     this.gasJet = primitive(app, 'cone', mats.gas(), { name: 'gas-jet', castShadows: false });
     this.gasJet.setLocalScale(0.01, 0.01, 0.01);
+    this.marker = primitive(app, 'sphere', mats.supply(), { name: 'hook-lock', castShadows: false });
+    this.marker.setLocalScale(0.01, 0.01, 0.01);
 
     this.cam = new pc.Entity('camera');
     this.cam.addComponent('camera', {
@@ -106,6 +115,7 @@ export class Player {
     this.cableL.destroy();
     this.cableR.destroy();
     this.gasJet.destroy();
+    this.marker.destroy();
     this.cam.destroy();
   }
 
@@ -121,20 +131,37 @@ export class Player {
     return this.left.active || this.right.active;
   }
 
+  get leftHooked(): boolean {
+    return this.left.active;
+  }
+
+  get rightHooked(): boolean {
+    return this.right.active;
+  }
+
   update(dt: number): void {
     if (!this.stats.alive) return;
     this.invuln = Math.max(0, this.invuln - dt);
+    this.missFlash = Math.max(0, this.missFlash - dt);
 
     const look = this.input.consumeLook();
     this.yaw -= look.x;
     this.pitch = clamp(this.pitch + look.y, -1.2, 1.2);
     lookYawPitch(this.yaw, this.pitch, this.fwd);
     this.rightV.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+    this.aimDir.copy(this.cam.forward);
+    if (this.aimDir.lengthSq() < 0.01) this.aimDir.copy(this.fwd);
 
-    const pos = this.entity.getPosition();
+    this.pos.copy(this.entity.getPosition());
+    const pos = this.pos;
     const ground = this.world.heightAt(pos.x, pos.z);
     const standing = pos.y <= ground + 1.85 && this.velocity.y <= 0.6;
     this.onGround = standing && !this.hooked();
+
+    const lock = this.aimHook(pos, 0);
+    this.hookReadyL = this.hookReadyR = Boolean(lock);
+    this.lockHint = lock ? `${lock.hookable.kind} · ${Math.round(lock.dist)}m — hold Q / E` : 'Look at a tree or roof';
+    this.updateMarker(lock);
 
     this.updateHooks(dt, pos);
     this.move(dt, pos, ground);
@@ -175,8 +202,8 @@ export class Player {
   }
 
   private updateHooks(dt: number, pos: pc.Vec3): void {
-    this.tryHook(this.input.state.hookL, this.left, pos, -1);
-    this.tryHook(this.input.state.hookR, this.right, pos, 1);
+    this.tryHook(this.wantsHook('L'), this.left, pos, -1);
+    this.tryHook(this.wantsHook('R'), this.right, pos, 1);
 
     for (const hook of [this.left, this.right]) {
       if (!hook.active) continue;
@@ -198,9 +225,28 @@ export class Player {
         if (along < 0) this.velocity.add(this.tmp.mulScalar(-along));
       }
 
-      const pull = 18 + (this.input.state.gas ? 10 : 0);
+      const pull = 32 + (this.input.state.gas ? 18 : 0);
       this.velocity.add(this.tmp.copy(hook.point).sub(pos).normalize().mulScalar(pull * dt));
     }
+  }
+
+  private wantsHook(side: 'L' | 'R'): boolean {
+    const st = this.input.state;
+    const kb = this.app.keyboard;
+    if (side === 'L') {
+      return st.hookL || Boolean(kb?.isPressed(pc.KEY_Q)) || Boolean(kb?.isPressed(pc.KEY_Z));
+    }
+    return st.hookR || Boolean(kb?.isPressed(pc.KEY_E)) || Boolean(kb?.isPressed(pc.KEY_X));
+  }
+
+  private updateMarker(lock: { point: pc.Vec3; dist: number } | null): void {
+    if (!lock) {
+      this.marker.setLocalScale(0.01, 0.01, 0.01);
+      return;
+    }
+    const s = clamp(0.55 + lock.dist * 0.012, 0.7, 2.4);
+    this.marker.setLocalScale(s, s, s);
+    this.marker.setPosition(lock.point);
   }
 
   private tryHook(held: boolean, hook: Hook, pos: pc.Vec3, side: number): void {
@@ -209,20 +255,33 @@ export class Player {
       return;
     }
     if (hook.active) return;
-    this.origin.copy(pos);
-    this.origin.x += this.rightV.x * 0.35 * side;
-    this.origin.y += 1.1;
-    this.origin.z += this.rightV.z * 0.35 * side;
-    const hit = raycastHookables(this.origin, this.fwd, this.world.hookables, HOOK_RANGE);
-    if (!hit) return;
+    const hit = this.aimHook(pos, side);
+    if (!hit) {
+      this.missFlash = 0.18;
+      return;
+    }
     hook.active = true;
     hook.point.copy(hit.point);
     hook.length = Math.max(MIN_ROPE, hit.dist);
     audio.hook();
   }
 
+  private aimHook(pos: pc.Vec3, side: number) {
+    this.origin.copy(pos);
+    this.origin.x += this.rightV.x * 0.45 * side;
+    this.origin.y += 1.15;
+    this.origin.z += this.rightV.z * 0.45 * side;
+    const dir = this.aimDir.lengthSq() > 0.01 ? this.aimDir : this.fwd;
+    return findHookTarget(this.origin, dir, this.world.allHookables(), HOOK_RANGE);
+  }
+
   private move(dt: number, pos: pc.Vec3, ground: number): void {
     const st = this.input.state;
+    const { x: mx, z: mz } = this.moveAxes();
+    const fX = Math.sin(this.yaw);
+    const fZ = Math.cos(this.yaw);
+    const wishX = this.rightV.x * mx + fX * mz;
+    const wishZ = this.rightV.z * mx + fZ * mz;
     const airborne = !this.onGround || this.hooked();
 
     if (airborne) {
@@ -237,8 +296,8 @@ export class Player {
           this.gasSfx = 0;
         }
       }
-      this.velocity.x += (this.rightV.x * st.moveX + this.fwd.x * st.moveZ) * 10 * dt;
-      this.velocity.z += (this.rightV.z * st.moveX + this.fwd.z * st.moveZ) * 10 * dt;
+      this.velocity.x += wishX * AIR_CONTROL * dt;
+      this.velocity.z += wishZ * AIR_CONTROL * dt;
       this.velocity.lerp(this.velocity, this.tmp.set(0, this.velocity.y, 0), 1 - Math.exp(-AIR_DRAG * dt));
       const horiz = Math.hypot(this.velocity.x, this.velocity.z);
       const cap = st.gas ? MAX_SPEED : 28;
@@ -248,13 +307,11 @@ export class Player {
         this.velocity.z *= s;
       }
     } else {
-      const wishX = this.rightV.x * st.moveX + this.fwd.x * st.moveZ;
-      const wishZ = this.rightV.z * st.moveX + this.fwd.z * st.moveZ;
-      this.velocity.x = wishX * RUN_SPEED;
-      this.velocity.z = wishZ * RUN_SPEED;
+      const speed = st.gas ? RUN_SPEED * 1.4 : RUN_SPEED;
+      this.velocity.x = wishX * speed;
+      this.velocity.z = wishZ * speed;
       this.velocity.y = 0;
       if (st.jump) this.velocity.y = JUMP_SPEED;
-      this.velocity.x *= Math.exp(-GROUND_DRAG * dt * 0.05);
     }
 
     pos.x += this.velocity.x * dt;
@@ -278,6 +335,26 @@ export class Player {
       pos.y = 1.7;
       if (this.velocity.y < 0) this.velocity.y = 0;
     }
+  }
+
+  private moveAxes(): { x: number; z: number } {
+    let x = this.input.state.moveX;
+    let z = this.input.state.moveZ;
+    const kb = this.app.keyboard;
+    if (kb) {
+      if (kb.isPressed(pc.KEY_D) || kb.isPressed(pc.KEY_RIGHT)) x += 1;
+      if (kb.isPressed(pc.KEY_A) || kb.isPressed(pc.KEY_LEFT)) x -= 1;
+      if (kb.isPressed(pc.KEY_W) || kb.isPressed(pc.KEY_UP)) z += 1;
+      if (kb.isPressed(pc.KEY_S) || kb.isPressed(pc.KEY_DOWN)) z -= 1;
+    }
+    x = clamp(x, -1, 1);
+    z = clamp(z, -1, 1);
+    const len = Math.hypot(x, z);
+    if (len > 1) {
+      x /= len;
+      z /= len;
+    }
+    return { x, z };
   }
 
   private refill(dt: number): void {
@@ -331,7 +408,7 @@ export class Player {
     const mz = (oz + hook.point.z) * 0.5;
     const len = Math.hypot(hook.point.x - ox, hook.point.y - oy, hook.point.z - oz);
     ent.setPosition(mx, my, mz);
-    ent.setLocalScale(0.04, 0.04, Math.max(0.05, len));
+    ent.setLocalScale(0.07, 0.07, Math.max(0.05, len));
     ent.lookAt(hook.point);
   }
 

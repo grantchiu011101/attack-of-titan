@@ -33,7 +33,7 @@ export interface ScoutProfile {
 
 export interface Hookable {
   id: number;
-  kind: 'tree' | 'building' | 'wall' | 'pole';
+  kind: 'tree' | 'building' | 'wall' | 'pole' | 'titan';
   /** World-space AABB */
   min: { x: number; y: number; z: number };
   max: { x: number; y: number; z: number };

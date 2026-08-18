@@ -110,6 +110,17 @@ export class Titan {
     this.nape.enabled = on;
   }
 
+  hookAabb() {
+    const p = this.entity.getPosition();
+    const w = 2.4;
+    return {
+      id: 0,
+      kind: 'titan' as const,
+      min: { x: p.x - w, y: p.y, z: p.z - w },
+      max: { x: p.x + w, y: p.y + this.height, z: p.z + w },
+    };
+  }
+
   private walk(dt: number, pos: pc.Vec3, world: World, speed: number): void {
     const nx = pos.x + Math.sin(this.yaw) * speed * dt;
     const nz = pos.z + Math.cos(this.yaw) * speed * dt;

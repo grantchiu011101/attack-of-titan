@@ -38,7 +38,7 @@ export class Match {
     this.player.stats.wave = tutorial ? 0 : 1;
     this.clearTitans();
     if (tutorial) {
-      this.banner = 'TUTORIAL — Hook Q / E · Gas Shift · Slash the nape';
+      this.banner = 'TUTORIAL — WASD move · Q / E hook · Shift gas · Slash the nape';
       this.titans.push(new Titan(this.app, 8, 16, 'normal'));
     } else {
       this.spawnWave(1);
@@ -59,6 +59,13 @@ export class Match {
 
   update(dt: number): void {
     this.input.beginFrame();
+    this.world.setDynamicHookables(
+      this.living().map((t, i) => {
+        const box = t.hookAabb();
+        box.id = 50_000 + i;
+        return box;
+      }),
+    );
     this.player.update(dt);
     this.slashCd = Math.max(0, this.slashCd - dt);
 

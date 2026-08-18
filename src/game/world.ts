@@ -19,6 +19,7 @@ export class World {
   hookables: Hookable[] = [];
   buildings: Hookable[] = [];
   supplies: SupplyCrate[] = [];
+  private dynamic: Hookable[] = [];
   private nextId = 1;
 
   constructor(private app: pc.Application) {}
@@ -41,6 +42,14 @@ export class World {
       }
     }
     return h;
+  }
+
+  allHookables(): Hookable[] {
+    return this.dynamic.length ? this.hookables.concat(this.dynamic) : this.hookables;
+  }
+
+  setDynamicHookables(list: Hookable[]): void {
+    this.dynamic = list;
   }
 
   blockedAt(x: number, y: number, z: number, radius: number): boolean {
@@ -197,6 +206,11 @@ export class World {
       const z = -70 + Math.floor(i / 6) * 14;
       this.tree(x, z, 0.9, 12);
     }
+    for (let i = 0; i < 10; i++) {
+      this.tree(-55 + i * 12, -155, 0.85, 13);
+      this.tree(-50 + i * 11, -125, 0.95, 14);
+      this.tree(-40 + i * 10, -95, 0.8, 12);
+    }
   }
 
   private tree(x: number, z: number, girth: number, height: number): void {
@@ -220,6 +234,7 @@ export class World {
   private poles(): void {
     const spots = [
       [-20, -50], [20, -50], [-60, 20], [60, 24], [0, 70], [-70, -10], [70, -8],
+      [-12, -165], [12, -165], [-28, -140], [28, -140], [0, -118],
     ];
     for (const [x, z] of spots) {
       const p = primitive(this.app, 'cylinder', mats.wood(), { name: 'pole' });

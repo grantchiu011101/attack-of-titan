@@ -168,6 +168,8 @@ async function startMatch(next: 'tutorial' | 'waves', diff: Difficulty): Promise
   await ensureApp();
   match?.destroy();
   if (menuCam) menuCam.enabled = false;
+  (document.activeElement as HTMLElement | null)?.blur();
+  canvas.focus();
   const flags = getFlags();
   match = new Match(app!, input!, flags, world!);
   match.setScoutPass(Boolean(getProfile()?.scoutPass));

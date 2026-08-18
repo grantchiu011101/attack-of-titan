@@ -40,8 +40,11 @@ export class Input {
   private lookTouch = { active: false, id: -1, lx: 0, ly: 0 };
 
   attach(canvas: HTMLCanvasElement): void {
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
+    const keyOpts = { capture: true } as const;
+    window.addEventListener('keydown', this.onKeyDown, keyOpts);
+    window.addEventListener('keyup', this.onKeyUp, keyOpts);
+    document.addEventListener('keydown', this.onKeyDown, keyOpts);
+    document.addEventListener('keyup', this.onKeyUp, keyOpts);
     canvas.addEventListener('mousedown', this.onMouseDown);
     window.addEventListener('mouseup', this.onMouseUp);
     window.addEventListener('mousemove', this.onMouseMove);
@@ -63,6 +66,8 @@ export class Input {
 
     this.bindHold('btn-hook-l', 'hookL');
     this.bindHold('btn-hook-r', 'hookR');
+    this.bindHold('hook-l', 'hookL');
+    this.bindHold('hook-r', 'hookR');
     this.bindHold('btn-gas', 'gas');
     this.bindHold('btn-jump', 'jump');
     const slashBtn = document.getElementById('btn-slash');
@@ -95,9 +100,9 @@ export class Input {
     this.state.moveZ = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0) - joyY;
     this.state.moveX = Math.max(-1, Math.min(1, this.state.moveX));
     this.state.moveZ = Math.max(-1, Math.min(1, this.state.moveZ));
-    this.state.hookL = k.has('KeyQ') || this.held.hookL;
-    this.state.hookR = k.has('KeyE') || this.held.hookR;
-    this.state.gas = k.has('ShiftLeft') || k.has('ShiftRight') || k.has('Space') || this.held.gas;
+    this.state.hookL = k.has('KeyQ') || k.has('KeyZ') || k.has('Digit1') || k.has('Mouse2') || this.held.hookL;
+    this.state.hookR = k.has('KeyE') || k.has('KeyX') || k.has('Digit3') || k.has('Mouse2') || this.held.hookR;
+    this.state.gas = k.has('ShiftLeft') || k.has('ShiftRight') || k.has('Space') || k.has('KeyF') || this.held.gas;
     this.state.jump = k.has('Space') || this.held.jump;
     const slash = k.has('Mouse0') || this.state.slash;
     this.state.slashPressed = slash && !this.slashWas;
@@ -124,21 +129,40 @@ export class Input {
     el.addEventListener('touchstart', down, { passive: false });
     el.addEventListener('touchend', up);
     el.addEventListener('mousedown', down);
-    el.addEventListener('mouseup', up);
+    window.addEventListener('mouseup', up);
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
     this.keys.add(e.code);
+    const letter = e.key.toLowerCase();
+    if (letter === 'q' || letter === 'z' || letter === '1') this.keys.add('KeyQ');
+    if (letter === 'e' || letter === 'x' || letter === '3') this.keys.add('KeyE');
+    if (letter === 'f') this.keys.add('KeyF');
+    if (letter === 'w') this.keys.add('KeyW');
+    if (letter === 'a') this.keys.add('KeyA');
+    if (letter === 's') this.keys.add('KeyS');
+    if (letter === 'd') this.keys.add('KeyD');
     if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
     this.keys.delete(e.code);
+    const letter = e.key.toLowerCase();
+    if (letter === 'q' || letter === 'z' || letter === '1') this.keys.delete('KeyQ');
+    if (letter === 'e' || letter === 'x' || letter === '3') this.keys.delete('KeyE');
+    if (letter === 'f') this.keys.delete('KeyF');
+    if (letter === 'w') this.keys.delete('KeyW');
+    if (letter === 'a') this.keys.delete('KeyA');
+    if (letter === 's') this.keys.delete('KeyS');
+    if (letter === 'd') this.keys.delete('KeyD');
   };
 
   private onMouseDown = (e: MouseEvent): void => {
     if (e.button === 0) this.keys.add('Mouse0');
-    if (e.button === 2) this.keys.add('Mouse2');
+    if (e.button === 2) {
+      e.preventDefault();
+      this.keys.add('Mouse2');
+    }
   };
 
   private onMouseUp = (e: MouseEvent): void => {
