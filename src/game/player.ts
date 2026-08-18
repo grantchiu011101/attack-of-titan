@@ -84,7 +84,7 @@ export class Player {
 
     this.cam = new pc.Entity('camera');
     this.cam.addComponent('camera', {
-      clearColor: new pc.Color(0.56, 0.61, 0.64),
+      clearColor: new pc.Color(0.52, 0.62, 0.72),
       farClip: 420,
       fov: 68,
       priority: 1,

@@ -67,39 +67,92 @@ export class World {
   }
 
   private ground(): void {
-    const g = primitive(this.app, 'plane', mats.grass(), { name: 'ground', castShadows: false });
-    g.setLocalScale(WORLD_RADIUS * 2.4, 1, WORLD_RADIUS * 2.4);
-    g.setPosition(0, 0, 0);
+    const g = primitive(this.app, 'box', mats.grass(), { name: 'ground', castShadows: false });
+    g.setLocalScale(WORLD_RADIUS * 2.4, 0.5, WORLD_RADIUS * 2.4);
+    g.setPosition(0, -0.25, 0);
 
-    this.app.scene.ambientLight = new pc.Color(0.32, 0.34, 0.36);
-    this.app.scene.fog.type = pc.FOG_LINEAR;
-    this.app.scene.fog.start = 70;
-    this.app.scene.fog.end = 240;
-    this.app.scene.fog.color = new pc.Color(0.58, 0.62, 0.64);
+    this.lights();
+  }
+
+  private lights(): void {
+    const scene = this.app.scene;
+    scene.ambientLight = new pc.Color(0.16, 0.18, 0.22);
+    scene.fog.type = pc.FOG_LINEAR;
+    scene.fog.start = 90;
+    scene.fog.end = 280;
+    scene.fog.color = new pc.Color(0.55, 0.62, 0.7);
+    scene.lighting.shadowsEnabled = true;
+    scene.lighting.shadowAtlasResolution = 2048;
 
     const sun = new pc.Entity('sun');
     sun.addComponent('light', {
       type: 'directional',
-      color: new pc.Color(1, 0.93, 0.82),
-      intensity: 1.15,
+      color: new pc.Color(1, 0.91, 0.74),
+      intensity: 1.85,
       castShadows: true,
-      shadowDistance: 160,
-      shadowResolution: 1024,
-      shadowBias: 0.3,
-      normalOffsetBias: 0.1,
+      shadowIntensity: 0.9,
+      shadowDistance: 320,
+      shadowResolution: 2048,
+      shadowType: pc.SHADOW_PCF3_32F,
+      numCascades: 4,
+      cascadeBlend: 0.2,
+      shadowBias: 0.08,
+      normalOffsetBias: 0.12,
+      shadowUpdateMode: pc.SHADOWUPDATE_REALTIME,
     });
-    sun.setEulerAngles(42, 35, 0);
+    sun.setEulerAngles(52, -38, 0);
     this.app.root.addChild(sun);
 
-    const fill = new pc.Entity('fill');
+    const fill = new pc.Entity('sky-fill');
     fill.addComponent('light', {
       type: 'directional',
-      color: new pc.Color(0.45, 0.52, 0.62),
-      intensity: 0.35,
+      color: new pc.Color(0.42, 0.55, 0.72),
+      intensity: 0.28,
       castShadows: false,
     });
-    fill.setEulerAngles(-20, -140, 0);
+    fill.setEulerAngles(-25, 150, 0);
     this.app.root.addChild(fill);
+
+    const rim = new pc.Entity('rim');
+    rim.addComponent('light', {
+      type: 'directional',
+      color: new pc.Color(1, 0.78, 0.52),
+      intensity: 0.22,
+      castShadows: false,
+    });
+    rim.setEulerAngles(15, 200, 0);
+    this.app.root.addChild(rim);
+
+    const lamps: Array<[number, number, number]> = [
+      [0, 6, 8],
+      [-30, 5, -12],
+      [36, 5, 22],
+      [0, 8, -118],
+      [-12, 10, -165],
+      [12, 10, -165],
+      [2, 14, 6],
+    ];
+    for (const [x, y, z] of lamps) {
+      this.lantern(x, y, z);
+    }
+  }
+
+  private lantern(x: number, y: number, z: number): void {
+    const bulb = primitive(this.app, 'sphere', mats.supply(), { name: 'lantern', castShadows: false });
+    bulb.setLocalScale(0.35, 0.35, 0.35);
+    bulb.setPosition(x, y, z);
+
+    const light = new pc.Entity('lamp');
+    light.addComponent('light', {
+      type: 'omni',
+      color: new pc.Color(1, 0.7, 0.32),
+      intensity: 2.6,
+      range: 26,
+      falloffMode: pc.LIGHTFALLOFF_INVERSESQUARED,
+      castShadows: false,
+    });
+    light.setPosition(x, y, z);
+    this.app.root.addChild(light);
   }
 
   private outerWall(): void {

@@ -140,7 +140,7 @@ async function ensureApp(): Promise<void> {
   world.build();
   menuCam = new Entity('menu-cam');
   menuCam.addComponent('camera', {
-    clearColor: new Color(0.56, 0.61, 0.64),
+    clearColor: new Color(0.52, 0.62, 0.72),
     farClip: 420,
     fov: 54,
     priority: 0,

@@ -22,7 +22,7 @@ export const DEFAULT_FLAGS: RemoteFlags = {
   napeGlowAlways: true,
   gasRegenPerSec: 4.5,
   titanBaseCount: 3,
-  shadowQuality: 'low',
+  shadowQuality: 'high',
   scoutPassPriceId: '',
   gasPackPriceId: '',
   abBucket: 'A',
