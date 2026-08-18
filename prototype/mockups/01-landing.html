@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mockup · Main menu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Barlow+Condensed:wght@600&family=Source+Sans+3&display=swap" rel="stylesheet" />
+    <style>
+      :root { --gold:#d2ba82; --crimson:#9a2b24; --mist:#c9cfc4; }
+      html,body { margin:0; min-height:100%; font-family:'Source Sans 3',sans-serif; color:var(--mist); background:#0c100e; }
+      body { background: linear-gradient(90deg, rgba(8,10,9,.88), rgba(8,10,9,.4)), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect fill="%231a221c" width="1200" height="800"/><rect fill="%233d4a3a" x="0" y="520" width="1200" height="280"/><rect fill="%238a7a66" x="0" y="140" width="1200" height="80"/><rect fill="%236b5d4f" x="80" y="280" width="90" height="240"/><rect fill="%237a3a32" x="70" y="250" width="110" height="30"/></svg>'); background-size:cover; }
+      header { display:flex; justify-content:space-between; padding:18px 28px; }
+      h1 { font-family:Cinzel,serif; font-size:56px; margin:0; }
+      main { padding:80px 48px; max-width:560px; }
+      .eyebrow { font-family:'Barlow Condensed',sans-serif; letter-spacing:.28em; text-transform:uppercase; color:var(--gold); }
+      nav { display:flex; flex-direction:column; gap:8px; margin-top:24px; }
+      button { font-family:'Barlow Condensed',sans-serif; letter-spacing:.14em; text-transform:uppercase; padding:12px 16px; border:1px solid rgba(210,186,130,.3); background:rgba(255,255,255,.04); color:inherit; }
+      button.primary { background:var(--crimson); color:#fff; }
+      aside { position:fixed; right:32px; bottom:32px; width:280px; padding:16px; border:1px solid rgba(210,186,130,.3); background:rgba(12,16,14,.8); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Attack of Titan</strong>
+      <span>Accounts · Guest Scout</span>
+    </header>
+    <main>
+      <p class="eyebrow">Survey Corps · Web ODM</p>
+      <h1>Attack of Titan</h1>
+      <p>Dual grappling hooks, gas boost, nape-only kills. Inspired by AoTTG2’s skill ceiling — built for the browser in PlayCanvas.</p>
+      <nav>
+        <button>Tutorial</button>
+        <button class="primary">Singleplayer Waves</button>
+        <button>Endless</button>
+        <button>Profile</button>
+        <button>Scout Pass</button>
+        <button>Settings</button>
+      </nav>
+    </main>
+    <aside>
+      <h3>Regiment board</h3>
+      <p>1. Levi — 9800</p>
+      <p>2. Mikasa — 8700</p>
+      <p>3. Guest Scout — 1200</p>
+    </aside>
+  </body>
+</html>

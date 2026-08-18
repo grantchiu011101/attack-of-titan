@@ -1,0 +1,12 @@
+{
+  "parameters": {
+    "hud_variant": { "defaultValue": { "value": "classic" } },
+    "tutorial_enabled": { "defaultValue": { "value": "true" } },
+    "nape_glow_always": { "defaultValue": { "value": "true" } },
+    "gas_regen_per_sec": { "defaultValue": { "value": "4.5" } },
+    "titan_base_count": { "defaultValue": { "value": "3" } },
+    "shadow_quality": { "defaultValue": { "value": "low" } },
+    "scout_pass_price_id": { "defaultValue": { "value": "" } },
+    "gas_pack_price_id": { "defaultValue": { "value": "" } }
+  }
+}

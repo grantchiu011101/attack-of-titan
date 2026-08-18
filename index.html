@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c100e" />
+    <title>Attack of Titan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Barlow+Condensed:wght@400;600;700&family=Source+Sans+3:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <canvas id="application"></canvas>
+
+    <div id="vignette"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="wings">▲</span>
+        <div>
+          <strong>Attack of Titan</strong>
+          <small>Beyond the Walls · Fan tribute</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="ab-badge" class="chip">Trial A</span>
+        <button type="button" id="btn-auth" class="ghost">Accounts</button>
+        <div class="who">
+          <img id="scout-avatar" alt="" />
+          <span data-scout-name>Guest Scout</span>
+        </div>
+      </div>
+    </header>
+
+    <section id="screen-menu" class="overlay open" aria-hidden="false">
+      <div class="menu-panel">
+        <p class="eyebrow">Survey Corps · Web ODM</p>
+        <h1>Attack of Titan</h1>
+        <p class="lede">
+          Dual hooks. Gas. Nape. A browser tribute to the ODM skill ceiling of
+          <a href="https://aottg2.com/" target="_blank" rel="noreferrer">AoTTG2</a>
+          — unofficial, original assets, playable in one click.
+        </p>
+        <div class="diff-row" role="group" aria-label="Difficulty">
+          <button type="button" data-diff="easy">Easy</button>
+          <button type="button" data-diff="normal" class="active">Normal</button>
+          <button type="button" data-diff="realism">Realism</button>
+        </div>
+        <nav class="menu-list">
+          <button type="button" id="btn-tutorial">Tutorial</button>
+          <button type="button" id="btn-play" class="primary">Singleplayer Waves</button>
+          <button type="button" id="btn-endless">Endless</button>
+          <button type="button" id="btn-profile">Profile</button>
+          <button type="button" id="btn-shop">Scout Pass</button>
+          <button type="button" id="btn-settings">Settings</button>
+        </nav>
+        <p class="hint">Click the canvas, then Q / E hooks · Shift gas · LMB slash nape</p>
+      </div>
+      <aside class="intel">
+        <h2>Regiment board</h2>
+        <ul id="leaderboard"><li>Loading…</li></ul>
+        <p class="disclaimer">
+          Not affiliated with Kodansha, MAPPA, or the AoTTG2 volunteer team. Inspired by Feng Lee’s original tribute game.
+        </p>
+      </aside>
+    </section>
+
+    <section id="screen-hud" class="hud" aria-hidden="true">
+      <div class="hud-left">
+        <div class="meter">
+          <label>HP <span id="hp-val">100</span></label>
+          <div class="track"><i id="hp-bar"></i></div>
+        </div>
+        <div class="meter gas">
+          <label>GAS <span id="gas-val">100</span></label>
+          <div class="track"><i id="gas-bar"></i></div>
+        </div>
+        <div class="meter blades">
+          <label>BLADES <span id="blade-val">50</span></label>
+          <div class="track"><i id="blade-bar"></i></div>
+        </div>
+      </div>
+      <div class="hud-center">
+        <div id="wave-val" class="wave">WAVE 1</div>
+        <div id="banner" class="banner"></div>
+        <div id="crosshair" class="crosshair"></div>
+      </div>
+      <div class="hud-right">
+        <div class="stat"><span>Kills</span><b id="kill-val">0</b></div>
+        <div class="stat"><span>Score</span><b id="score-val">0</b></div>
+        <ul id="kill-feed" class="feed"></ul>
+      </div>
+    </section>
+
+    <div id="mobile-controls">
+      <div id="joy-pad" class="joy"><i id="joy-knob"></i></div>
+      <div id="look-pad" class="look-pad"></div>
+      <div class="action-cluster">
+        <button type="button" id="btn-hook-l">Q</button>
+        <button type="button" id="btn-hook-r">E</button>
+        <button type="button" id="btn-gas">GAS</button>
+        <button type="button" id="btn-jump">JMP</button>
+        <button type="button" id="btn-slash" class="slash">SLASH</button>
+      </div>
+    </div>
+
+    <div id="screen-pause" class="modal" aria-hidden="true">
+      <div class="card">
+        <h2>Halted</h2>
+        <button type="button" id="btn-resume" class="primary">Resume</button>
+        <button type="button" id="btn-menu">Return to wall</button>
+      </div>
+    </div>
+
+    <div id="screen-dead" class="modal" aria-hidden="true">
+      <div class="card">
+        <h2>Fallen</h2>
+        <p>Score <b id="dead-score">0</b> · Kills <b id="dead-kills">0</b></p>
+        <button type="button" id="btn-retry" class="primary">Deploy again</button>
+        <button type="button" id="btn-dead-menu">Menu</button>
+      </div>
+    </div>
+
+    <div id="screen-auth" class="modal" aria-hidden="true">
+      <div class="card">
+        <h2>Sign in</h2>
+        <p>Firebase Auth · Google or phone. Guest play always works.</p>
+        <p id="auth-error" class="error"></p>
+        <button type="button" id="btn-google" class="primary">Continue with Google</button>
+        <button type="button" id="btn-guest">Play as guest</button>
+        <div class="phone">
+          <input id="phone-input" type="tel" placeholder="+1 555 555 0100" />
+          <button type="button" id="btn-phone-send">Send SMS code</button>
+          <div id="phone-step-2">
+            <input id="phone-code" inputmode="numeric" placeholder="6-digit code" />
+            <button type="button" id="btn-phone-confirm">Verify</button>
+          </div>
+        </div>
+        <div id="recaptcha-host"></div>
+        <button type="button" class="ghost" data-close="auth">Close</button>
+      </div>
+    </div>
+
+    <div id="screen-shop" class="modal" aria-hidden="true">
+      <div class="card wide">
+        <h2>Support the walls</h2>
+        <p>Stripe checkout. 100% of live charges can fund Firebase hosting &amp; functions.</p>
+        <div class="products">
+          <article>
+            <h3>Scout Pass</h3>
+            <p>$4.99 / month · faster gas regen, full blade refill between waves.</p>
+            <button type="button" id="btn-buy-pass" class="primary">Subscribe</button>
+          </article>
+          <article>
+            <h3>Gas pack</h3>
+            <p>$1.99 · cosmetic boost grant (demo fills gas locally).</p>
+            <button type="button" id="btn-buy-gas">Buy pack</button>
+          </article>
+        </div>
+        <button type="button" class="ghost" data-close="shop">Close</button>
+      </div>
+    </div>
+
+    <div id="screen-settings" class="modal" aria-hidden="true">
+      <div class="card">
+        <h2>Settings</h2>
+        <label>Look sensitivity <input id="sens" type="range" min="1" max="10" value="3" /></label>
+        <label class="check"><input id="invert-y" type="checkbox" /> Invert Y</label>
+        <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7" /></label>
+        <button type="button" class="ghost" data-close="settings">Close</button>
+      </div>
+    </div>
+
+    <div id="screen-profile" class="modal" aria-hidden="true">
+      <div class="card">
+        <h2 data-scout-name>Guest Scout</h2>
+        <p data-scout-rank>Recruit</p>
+        <p>Lifetime kills <b data-scout-kills>0</b></p>
+        <p>Best score <b data-scout-best>0</b></p>
+        <button type="button" id="btn-logout">Sign out</button>
+        <button type="button" class="ghost" data-close="profile">Close</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
